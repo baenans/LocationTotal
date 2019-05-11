@@ -39,11 +39,8 @@ class MapFragment: Fragment() {
         val FRAGMENT_ACTION_DISPLAY_MARKER = "$TAG.display_marker"
         const val DEFAULT_MAP_LAT = 50.9087
         const val DEFAULT_MAP_LNG = -1.4096
-        fun newInstance(action: String = FRAGMENT_ACTION_DEFAULT, extra: String? = null) = MapFragment().apply {
-            Log.v(TAG, "pre newInstance bundle! $action")
+        fun newInstance(action: String = FRAGMENT_ACTION_DEFAULT, extra: String = "") = MapFragment().apply {
             arguments = Bundle().apply {
-                Log.v(TAG, "newInstance bundle! $action")
-
                 putString(ARG_ACTION, action)
                 putString(ARG_EXTRA, extra)
             }
@@ -59,9 +56,7 @@ class MapFragment: Fragment() {
     var mTrackingRoute: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Log.v(TAG, "onCriiiiieeys!" + arguments.toString())
         arguments?.let {
-            Log.v(TAG, "onCriiiiieeys! args")
             mAction = it.getString(ARG_ACTION)
             mExtra = it.getString(ARG_EXTRA)
         }
@@ -132,15 +127,12 @@ class MapFragment: Fragment() {
             }
         }
         btn_toggle_tracking.setOnClickListener { toggleRouteTracking() }
+
         when(mAction) {
-            FRAGMENT_ACTION_DISPLAY_MARKER -> {
-
-            }
-
-            FRAGMENT_ACTION_DISPLAY_TRACK -> {
-
-            }
+            FRAGMENT_ACTION_DISPLAY_MARKER -> displayMarker()
+            FRAGMENT_ACTION_DISPLAY_TRACK -> displayTrack()
         }
+
     }
 
     override fun onResume() {
@@ -217,12 +209,16 @@ class MapFragment: Fragment() {
         val geoPoints = listOf<GeoPoint>(
             GeoPoint(0.0,0.0),
             GeoPoint(1.0,0.0),
-            GeoPoint(2.0,0.0)
+            GeoPoint(2.0,0.0),
+            GeoPoint(4.0,20.0),
+            GeoPoint(60.0,80.0),
+            GeoPoint(120.0,-100.0)
         )
-        var trackPath = PathOverlay(Color.RED)
+        var trackPath = PathOverlay(Color.RED, 3.0f)
         geoPoints.forEach {
             trackPath.addPoint(it)
         }
+        setMapCenter(geoPoints[0])
         mMapView.overlays.add(trackPath)
     }
 }

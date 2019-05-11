@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
             replaceFragment(fragment)
         }
 
-        replaceFragment(MapFragment())
+        replaceFragment(MapFragment.newInstance())
         mLocationServiceIntent = Intent(this, LocationService::class.java)
         startService(mLocationServiceIntent)
     }
