@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.util.Log
@@ -25,6 +26,7 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.ItemizedIconOverlay
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.OverlayItem
+import org.osmdroid.views.overlay.PathOverlay
 
 class MapFragment: Fragment() {
 
@@ -211,5 +213,16 @@ class MapFragment: Fragment() {
 
     fun displayTrack() {
         // mExtra -> route
+        // TODO: generate geopoints from GPX file
+        val geoPoints = listOf<GeoPoint>(
+            GeoPoint(0.0,0.0),
+            GeoPoint(1.0,0.0),
+            GeoPoint(2.0,0.0)
+        )
+        var trackPath = PathOverlay(Color.RED)
+        geoPoints.forEach {
+            trackPath.addPoint(it)
+        }
+        mMapView.overlays.add(trackPath)
     }
 }
