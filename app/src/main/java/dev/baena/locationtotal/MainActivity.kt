@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
             val fragment =
                 if (it.itemId == R.id.nav_notes) NotesFragment.newInstance()
                 else if (it.itemId == R.id.nav_activities) ActivitiesFragment.newInstance()
-                else MapFragment.newInstance()
+                else MapFragment.newInstance(MapFragment.FRAGMENT_ACTION_DEFAULT)
             drawerLayout.closeDrawers()
             replaceFragment(fragment)
         }

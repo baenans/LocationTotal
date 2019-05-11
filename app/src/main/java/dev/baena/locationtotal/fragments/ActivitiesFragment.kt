@@ -5,7 +5,9 @@ import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import dev.baena.locationtotal.MainActivity
 import dev.baena.locationtotal.R
+import dev.baena.locationtotal.models.Note
 
 class ActivitiesFragment: Fragment() {
 
@@ -17,6 +19,10 @@ class ActivitiesFragment: Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
             = inflater.inflate(R.layout.fragment_activities, container, false)
 
+    fun openTrack(fileName: String) {
+        val mainActivity: MainActivity = activity as MainActivity
+        mainActivity.displayTrack(fileName)
+    }
 
     fun getTracks() {
         /**
