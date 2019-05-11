@@ -11,5 +11,5 @@
     </style>
 
     <style name="ToolbarTheme" parent="ThemeOverlay.AppCompat.Dark" />
-    
+
 </resources>

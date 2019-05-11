@@ -18,6 +18,8 @@ import android.support.v4.content.ContextCompat
 import android.util.Log
 import dev.baena.locationtotal.MainActivity
 import dev.baena.locationtotal.R
+import dev.baena.locationtotal.utils.GPXTrackWriter
+import java.util.*
 
 class LocationService: Service(), LocationListener {
 
@@ -31,17 +33,16 @@ class LocationService: Service(), LocationListener {
         val ACTION_REQUEST_TRACKING_STATUS = "$TAG.request_tracking_status"
         val ACTION_TRACKING_STATUS_CHANGED = "$TAG.tracking_status_changed"
         val ACTION_TRACKING_STATUS_CHANGED_STATUS = "$ACTION_TRACKING_STATUS_CHANGED.status"
-
+        private const val NOTIFICATION_ID = 12345678
+        private const val LOCATION_MIN_TIME_IN_MILLISECONDS: Long = 1000
+        private const val LOCATION_MIN_DISTANCE_IN_METERS: Float = 5.5f
     }
-
-    val NOTIFICATION_ID = 12345678
-    val LOCATION_MIN_TIME_IN_MILLISECONDS: Long = 1000
-    val LOCATION_MIN_DISTANCE_IN_METERS: Float = 5.5f
 
     lateinit var mBroadcastReceiver: BroadcastReceiver
     lateinit var mLocationManager: LocationManager
     lateinit var mNotificationManager: NotificationManager
     var mTrackingLocation: Boolean = false
+    var mTrackFile: GPXTrackWriter? = null
 
     inner class LocationServiceBinder() : Binder() {
         fun getService(): LocationService {
@@ -113,7 +114,7 @@ class LocationService: Service(), LocationListener {
      * Location Logic
      */
 
-    override fun onLocationChanged(location: Location?) {
+    override fun onLocationChanged(location: Location) {
         Log.v(TAG, "Location changed: ${location.toString()}")
         sendBroadcast(Intent().apply{
             action = ACTION_LOCATION_CHANGED
@@ -141,14 +142,16 @@ class LocationService: Service(), LocationListener {
 
     fun startTracking() {
         startForeground(NOTIFICATION_ID, getNotification())
+        mTrackFile = GPXTrackWriter(this)
         mTrackingLocation = true
         notifyTrackingStatus()
     }
 
-
     fun stopTracking() {
         stopForeground(true)
         mTrackingLocation = false
+        mTrackFile?.closeGPXFile()
+        mTrackFile = null
         notifyTrackingStatus()
     }
 
@@ -159,9 +162,14 @@ class LocationService: Service(), LocationListener {
         })
     }
 
-    private fun persistLatestLocation(location: Location?) {
+    private fun persistLatestLocation(location: Location) {
         Log.v(TAG, "Persisting the latest location!: ${location.toString()}")
-        TODO("implementation needed")
+        mTrackFile?.addTrackPoint(
+            location.latitude,
+            location.longitude,
+            location.altitude,
+            Date()
+        )
     }
 
     /**
