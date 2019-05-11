@@ -16,6 +16,7 @@ import dev.baena.locationtotal.R
 import dev.baena.locationtotal.db.DBHelper
 import dev.baena.locationtotal.models.Note
 import dev.baena.locationtotal.services.LocationService
+import dev.baena.locationtotal.utils.GPXTrackParser
 import kotlinx.android.synthetic.main.fragment_map.*
 import org.jetbrains.anko.toast
 import org.osmdroid.config.Configuration
@@ -23,17 +24,14 @@ import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.ItemizedIconOverlay
-import org.osmdroid.views.overlay.MapEventsOverlay
-import org.osmdroid.views.overlay.OverlayItem
-import org.osmdroid.views.overlay.PathOverlay
+import org.osmdroid.views.overlay.*
 
 class MapFragment: Fragment() {
 
     companion object {
         val TAG = MapFragment::class.java.canonicalName
         val ARG_ACTION = "$TAG.arg_action"
-        val ARG_EXTRA = "$TAG.arg_action"
+        val ARG_EXTRA = "$TAG.arg_extra"
         val FRAGMENT_ACTION_DEFAULT = "$TAG.default"
         val FRAGMENT_ACTION_DISPLAY_TRACK = "$TAG.display_track"
         val FRAGMENT_ACTION_DISPLAY_MARKER = "$TAG.display_marker"
@@ -128,9 +126,15 @@ class MapFragment: Fragment() {
         }
         btn_toggle_tracking.setOnClickListener { toggleRouteTracking() }
 
+        Log.v(TAG, "action choosen: ${mAction}" )
         when(mAction) {
-            FRAGMENT_ACTION_DISPLAY_MARKER -> displayMarker()
-            FRAGMENT_ACTION_DISPLAY_TRACK -> displayTrack()
+            FRAGMENT_ACTION_DISPLAY_MARKER -> {
+                displayMarker()
+            }
+
+            FRAGMENT_ACTION_DISPLAY_TRACK -> {
+                displayTrack()
+            }
         }
 
     }
@@ -204,21 +208,14 @@ class MapFragment: Fragment() {
     }
 
     fun displayTrack() {
-        // mExtra -> route
-        // TODO: generate geopoints from GPX file
-        val geoPoints = listOf<GeoPoint>(
-            GeoPoint(0.0,0.0),
-            GeoPoint(1.0,0.0),
-            GeoPoint(2.0,0.0),
-            GeoPoint(4.0,20.0),
-            GeoPoint(60.0,80.0),
-            GeoPoint(120.0,-100.0)
-        )
-        var trackPath = PathOverlay(Color.RED, 3.0f)
-        geoPoints.forEach {
-            trackPath.addPoint(it)
+        val geoPoints= GPXTrackParser.parseFile(mExtra)
+        var line = Polyline().apply {
+            width = 5f
+            isGeodesic = true
+            color = Color.BLUE
         }
+        line.setPoints(geoPoints)
         setMapCenter(geoPoints[0])
-        mMapView.overlays.add(trackPath)
+        mMapView.overlays.add(line)
     }
 }
