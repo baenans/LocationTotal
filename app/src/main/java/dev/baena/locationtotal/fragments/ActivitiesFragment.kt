@@ -17,4 +17,24 @@ class ActivitiesFragment: Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
             = inflater.inflate(R.layout.fragment_activities, container, false)
 
+
+    fun getTracks() {
+        /**
+         * Explore directory - get list of files
+         *
+         * open: tap over list item
+         * erase: lateral slide
+         * share:
+         */
+        // display in recycler view
+    }
+
+    override fun onResume() {
+        super.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+    }
+
 }

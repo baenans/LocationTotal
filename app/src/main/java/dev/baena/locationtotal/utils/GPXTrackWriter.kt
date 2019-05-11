@@ -7,8 +7,13 @@ import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.*
+import java.lang.Exception
 
 class GPXTrackWriter(context: Context) {
+    /**
+     * TODO: improve storage, by recording temporary files and ensuring consistency
+     */
 
     companion object {
         val TAG = GPXTrackWriter::class.java.canonicalName
@@ -66,15 +71,22 @@ class GPXTrackWriter(context: Context) {
     }
 
     private fun ensureFolderExists(context: Context) {
-        val folder = File(context.filesDir, "$FOLDER_NAME")
+        val folder = File(context.filesDir, FOLDER_NAME)
         if (!folder.exists())
             folder.mkdir()
     }
 
     private fun appendToFile(content: String) {
-        val outputStream = OutputStreamWriter(FileOutputStream(mFile, true))
-        outputStream.append(content)
-        outputStream.flush()
+        // Run IO operation in corroutine
+        GlobalScope.launch(Dispatchers.IO) {
+            try{
+                val outputStream = OutputStreamWriter(FileOutputStream(mFile, true))
+                outputStream.append(content)
+                outputStream.flush()
+            } catch (e: Exception) {
+                Log.e(TAG, e.message)
+            }
+        }
     }
 
     private fun getDateString(date: Date): String =

@@ -11,8 +11,10 @@ import android.support.v4.content.ContextCompat
 import dev.baena.locationtotal.fragments.ActivitiesFragment
 import dev.baena.locationtotal.fragments.MapFragment
 import dev.baena.locationtotal.fragments.NotesFragment
+import dev.baena.locationtotal.models.Note
 import dev.baena.locationtotal.services.LocationService
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,12 +32,12 @@ class MainActivity : AppCompatActivity() {
         checkPermissions()
 
         main_navigation_view.setNavigationItemSelectedListener {
-            val fragmentClass =
-                if (it.itemId == R.id.nav_notes) NotesFragment::class.java
-                else if (it.itemId == R.id.nav_activities) ActivitiesFragment::class.java
-                else MapFragment::class.java
+            val fragment =
+                if (it.itemId == R.id.nav_notes) NotesFragment.newInstance()
+                else if (it.itemId == R.id.nav_activities) ActivitiesFragment.newInstance()
+                else MapFragment.newInstance()
             drawerLayout.closeDrawers()
-            replaceFragment(fragmentClass.newInstance())
+            replaceFragment(fragment)
         }
 
         replaceFragment(MapFragment())
@@ -76,6 +78,20 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         stopService(mLocationServiceIntent);
         super.onDestroy()
+    }
+
+    fun displayTrack(fileName: String): Unit {
+        replaceFragment(MapFragment.newInstance(
+            MapFragment.FRAGMENT_ACTION_DISPLAY_TRACK,
+            fileName
+        ))
+    }
+
+    fun displayMarker(latLng: String): Unit {
+        replaceFragment(MapFragment.newInstance(
+            MapFragment.FRAGMENT_ACTION_DISPLAY_MARKER,
+            latLng
+        ))
     }
 
 }

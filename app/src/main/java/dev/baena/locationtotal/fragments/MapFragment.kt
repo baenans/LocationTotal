@@ -30,16 +30,41 @@ class MapFragment: Fragment() {
 
     companion object {
         val TAG = MapFragment::class.java.canonicalName
-        fun newInstance(): MapFragment = MapFragment()
+        val ARG_ACTION = "$TAG.arg_action"
+        val ARG_EXTRA = "$TAG.arg_action"
+        val FRAGMENT_ACTION_DEFAULT = "$TAG.default"
+        val FRAGMENT_ACTION_DISPLAY_TRACK = "$TAG.display_track"
+        val FRAGMENT_ACTION_DISPLAY_MARKER = "$TAG.display_marker"
         const val DEFAULT_MAP_LAT = 50.9087
         const val DEFAULT_MAP_LNG = -1.4096
+        fun newInstance(action: String = FRAGMENT_ACTION_DEFAULT, extra: String? = null) = MapFragment().apply {
+            Log.v(TAG, "pre newInstance bundle! $action")
+            arguments = Bundle().apply {
+                Log.v(TAG, "newInstance bundle! $action")
+
+                putString(ARG_ACTION, action)
+                putString(ARG_EXTRA, extra)
+            }
+        }
     }
 
     lateinit var mDatabase: DBHelper
     lateinit var mMapView: MapView
     lateinit var mMarkersOverlay: ItemizedIconOverlay<OverlayItem>
     lateinit var mBroadcastReceiver: BroadcastReceiver
+    lateinit var mAction: String
+    lateinit var mExtra: String
     var mTrackingRoute: Boolean = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        Log.v(TAG, "onCriiiiieeys!" + arguments.toString())
+        arguments?.let {
+            Log.v(TAG, "onCriiiiieeys! args")
+            mAction = it.getString(ARG_ACTION)
+            mExtra = it.getString(ARG_EXTRA)
+        }
+        super.onCreate(savedInstanceState)
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?  =
         inflater.inflate(R.layout.fragment_map, container, false)
@@ -105,11 +130,22 @@ class MapFragment: Fragment() {
             }
         }
         btn_toggle_tracking.setOnClickListener { toggleRouteTracking() }
+        when(mAction) {
+            FRAGMENT_ACTION_DISPLAY_MARKER -> {
+
+            }
+
+            FRAGMENT_ACTION_DISPLAY_TRACK -> {
+
+            }
+        }
     }
 
     override fun onResume() {
         activity?.registerReceiver(mBroadcastReceiver, IntentFilter().apply {
-            addAction(LocationService.ACTION_LOCATION_CHANGED)
+            if (mAction == FRAGMENT_ACTION_DEFAULT) {
+                addAction(LocationService.ACTION_LOCATION_CHANGED)
+            }
             addAction(LocationService.ACTION_TRACKING_STATUS_CHANGED)
         })
         broadcastAction(LocationService.ACTION_REQUEST_TRACKING_STATUS) // may not be working?
@@ -164,5 +200,16 @@ class MapFragment: Fragment() {
         return ArrayList(
             mDatabase.getNotes().map { getOverlayItemFor(it) }
         )
+    }
+
+    fun displayMarker() {
+        TODO("deserialize lat and long")   // mExtra -> serialized lat and lng
+        val lat: Double = DEFAULT_MAP_LAT
+        val lng: Double = DEFAULT_MAP_LNG
+        setMapCenter(GeoPoint(lat, lng))
+    }
+
+    fun displayTrack() {
+        // mExtra -> route
     }
 }
