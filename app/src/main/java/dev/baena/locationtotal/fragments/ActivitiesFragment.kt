@@ -2,51 +2,63 @@ package dev.baena.locationtotal.fragments
 
 import android.os.Bundle
 import android.support.v4.app.Fragment
+import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import dev.baena.locationtotal.MainActivity
 import dev.baena.locationtotal.R
-import dev.baena.locationtotal.models.Note
-import dev.baena.locationtotal.utils.GPXTrackWriter
+import dev.baena.locationtotal.adapters.TracksRecyclerAdapter
+import dev.baena.locationtotal.models.Track
 import kotlinx.android.synthetic.main.fragment_activities.*
+
 import java.io.File
 
-class ActivitiesFragment: Fragment() {
+class ActivitiesFragment: Fragment(), TracksRecyclerAdapter.OnTrackClickListener {
+
 
     companion object {
         val TAG = ActivitiesFragment::class.java.canonicalName
         fun newInstance(): ActivitiesFragment = ActivitiesFragment()
     }
 
+    lateinit var mTracks: ArrayList<Track>
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
             = inflater.inflate(R.layout.fragment_activities, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        // /data/user/0/dev.baena.locationtotal/files/tracks/2019-05-11T13:38:28Z.gpx
-        // /data/data/dev.baena.locationtotal/files/tracks/2019-05-11T13:38:28Z.gpx
-        btn_test_path.setOnClickListener {
-            val exampleFilePath =
-                File(view.context.filesDir, "/tracks/2019-05-11T13:38:28Z.gpx").canonicalPath
-            openTrack(exampleFilePath)
+        super.onViewCreated(view, savedInstanceState)
+
+        mTracks = ArrayList(getTracks())
+
+        tracks_recycler_view.apply {
+            layoutManager = LinearLayoutManager(activity)
+            adapter = TracksRecyclerAdapter(mTracks, this@ActivitiesFragment)
         }
 
-        super.onViewCreated(view, savedInstanceState)
     }
+
+    override fun onTrackClick(notePosition: Int) {
+        openTrack(mTracks[notePosition].path)
+    }
+
     fun openTrack(fileName: String) {
         val mainActivity: MainActivity = activity as MainActivity
         mainActivity.displayTrack(fileName)
     }
 
-    fun getTracks() {
-        /**
-         * Explore directory - get list of files
-         *
-         * open: tap over list item
-         * erase: lateral slide
-         * share:
-         */
-        // display in recycler view
+    fun getTracks(): List<Track> {
+        var tracks = mutableListOf<Track>()
+        val folder = File(context?.filesDir, "/tracks/");
+        if (!folder.exists()) return tracks
+        val files = folder.listFiles()
+        files.forEach {
+            tracks.add(
+                Track(it.name, it.canonicalPath)
+            )
+        }
+        return tracks
     }
 
     override fun onResume() {

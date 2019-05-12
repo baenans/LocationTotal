@@ -1,17 +1,19 @@
 package dev.baena.locationtotal.fragments
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.Fragment
+import android.support.v7.app.AlertDialog
+import android.text.InputType
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import dev.baena.locationtotal.BuildConfig
+import dev.baena.locationtotal.MainActivity
 import dev.baena.locationtotal.R
 import dev.baena.locationtotal.db.DBHelper
 import dev.baena.locationtotal.models.Note
@@ -67,8 +69,39 @@ class MapFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
-        mDatabase = DBHelper(view.context)
+        mDatabase = (activity as MainActivity).mDatabase
 
+        initializeMap(view)
+        btn_toggle_tracking.setOnClickListener { toggleRouteTracking() }
+        when(mAction) {
+            FRAGMENT_ACTION_DISPLAY_MARKER -> displayMarker()
+            FRAGMENT_ACTION_DISPLAY_TRACK -> displayTrack()
+        }
+        // Broadcast Receiver
+        mBroadcastReceiver = object: BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent?) {
+                when (intent?.action) {
+                    LocationService.ACTION_LOCATION_CHANGED -> {
+                        Log.v(TAG, "location changed")
+                        setMapCenter(
+                            GeoPoint(
+                                intent?.getDoubleExtra(LocationService.ACTION_LOCATION_CHANGED_LAT, DEFAULT_MAP_LAT),
+                                intent?.getDoubleExtra(LocationService.ACTION_LOCATION_CHANGED_LNG, DEFAULT_MAP_LNG)
+                            )
+                        )
+                    }
+                    LocationService.ACTION_TRACKING_STATUS_CHANGED -> {
+                        Log.v(TAG, "tracking status changed")
+                        onTrackingStatusChange(
+                            intent?.getBooleanExtra(LocationService.ACTION_TRACKING_STATUS_CHANGED_STATUS, false)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun initializeMap(view: View) {
         mMapView = view.findViewById(R.id.map_view)
         mMapView.controller.setZoom(16.0)
         mMapView.setMultiTouchControls(true)
@@ -94,49 +127,13 @@ class MapFragment: Fragment() {
         // Events Overlay
         val mMapEventsReceiver = object : MapEventsReceiver {
             override fun singleTapConfirmedHelper(point: GeoPoint?): Boolean = true
-            override fun longPressHelper(point: GeoPoint?): Boolean {
-                TODO("Implement functionality to add notes on long press")
+            override fun longPressHelper(point: GeoPoint): Boolean {
+                showDialogToCreateNote(point)
                 return true
             }
         }
 
         mMapView.overlays.add(MapEventsOverlay(mMapEventsReceiver));
-
-        // Broadcast Receiver
-        mBroadcastReceiver = object: BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent?) {
-                when (intent?.action) {
-                    LocationService.ACTION_LOCATION_CHANGED -> {
-                        Log.v(TAG, "location changed")
-                        setMapCenter(
-                            GeoPoint(
-                                intent?.getDoubleExtra(LocationService.ACTION_LOCATION_CHANGED_LAT, DEFAULT_MAP_LAT),
-                                intent?.getDoubleExtra(LocationService.ACTION_LOCATION_CHANGED_LNG, DEFAULT_MAP_LNG)
-                            )
-                        )
-                    }
-                    LocationService.ACTION_TRACKING_STATUS_CHANGED -> {
-                        Log.v(TAG, "tracking status changed")
-                        onTrackingStatusChange(
-                            intent?.getBooleanExtra(LocationService.ACTION_TRACKING_STATUS_CHANGED_STATUS, false)
-                        )
-                    }
-                }
-            }
-        }
-        btn_toggle_tracking.setOnClickListener { toggleRouteTracking() }
-
-        Log.v(TAG, "action choosen: ${mAction}" )
-        when(mAction) {
-            FRAGMENT_ACTION_DISPLAY_MARKER -> {
-                displayMarker()
-            }
-
-            FRAGMENT_ACTION_DISPLAY_TRACK -> {
-                displayTrack()
-            }
-        }
-
     }
 
     override fun onResume() {
@@ -146,7 +143,7 @@ class MapFragment: Fragment() {
             }
             addAction(LocationService.ACTION_TRACKING_STATUS_CHANGED)
         })
-        broadcastAction(LocationService.ACTION_REQUEST_TRACKING_STATUS) // may not be working?
+        broadcastAction(LocationService.ACTION_REQUEST_TRACKING_STATUS)
         super.onResume()
     }
 
@@ -155,14 +152,14 @@ class MapFragment: Fragment() {
         super.onPause()
     }
 
-    private fun setMapCenter(center: GeoPoint) {
-        mMapView?.controller.setCenter(center)
-    }
-
     private fun broadcastAction(actionS: String) {
         activity?.sendBroadcast(Intent().apply{
             action = actionS
         })
+    }
+
+    private fun setMapCenter(center: GeoPoint) {
+        mMapView?.controller.setCenter(center)
     }
 
     private fun toggleRouteTracking() {
@@ -174,9 +171,7 @@ class MapFragment: Fragment() {
     }
 
     private fun onTrackingStatusChange(trackingRoute: Boolean) {
-        Log.v(TAG, "onTrackingStatusChange: $trackingRoute")
         mTrackingRoute = trackingRoute
-
         btn_toggle_tracking.setImageResource(
             if (trackingRoute)
                 R.drawable.ic_stop
@@ -184,7 +179,6 @@ class MapFragment: Fragment() {
                 R.drawable.ic_record
         )
     }
-
 
     private fun getOverlayItemFor(note: Note) : OverlayItem {
         return OverlayItem(
@@ -200,15 +194,49 @@ class MapFragment: Fragment() {
         )
     }
 
-    fun displayMarker() {
-        TODO("deserialize lat and long")   // mExtra -> serialized lat and lng
-        val lat: Double = DEFAULT_MAP_LAT
-        val lng: Double = DEFAULT_MAP_LNG
-        setMapCenter(GeoPoint(lat, lng))
+    private fun showDialogToCreateNote(point: GeoPoint) {
+        context?.let {
+            val input = EditText(it).apply {
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS
+            }
+            AlertDialog.Builder(it)?.apply{
+                setTitle("Create a new note ")
+                setView(input)
+                setPositiveButton("OK") { dialog, which -> saveNote(input.text.toString(), point) }
+                setNegativeButton("Cancel") { dialog, which -> dialog.cancel() }
+            }.show()
+        }
     }
 
-    fun displayTrack() {
+    private fun saveNote(text: String, point: GeoPoint) {
+        if (text.isNotBlank()) {
+            val note = Note(
+                null,
+                text,
+                point.latitude,
+                point.longitude
+            )
+            mMarkersOverlay.addItem(getOverlayItemFor(note))
+            mDatabase.addNote(note)
+        }
+    }
+
+    private fun displayMarker() {
+        mExtra.split('&').let{
+            setMapCenter(
+                GeoPoint(
+                    it[0].drop(4).toDouble(),
+                    it[1].drop(4).toDouble()
+                )
+            )
+        }
+    }
+
+    private fun displayTrack() {
         val geoPoints= GPXTrackParser.parseFile(mExtra)
+        if (geoPoints.isEmpty()) {
+            return
+        }
         var line = Polyline().apply {
             width = 5f
             isGeodesic = true

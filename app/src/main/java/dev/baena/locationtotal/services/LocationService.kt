@@ -208,7 +208,7 @@ class LocationService: Service(), LocationListener {
             .setContentTitle("GPS Tracking")
             .setTicker("GPS Tracking")
             .setContentText("The application is tracking your route")
-            .setSmallIcon(R.drawable.ic_launcher_background)
+            .setSmallIcon(R.drawable.ic_navigation)
             .setContentIntent(action)
             .setOngoing(true)
     }

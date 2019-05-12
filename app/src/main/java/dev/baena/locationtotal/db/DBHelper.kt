@@ -11,7 +11,6 @@ const val DATABASE_VERSION = 1
 
 class DBHelper(ctx: Context): SQLiteOpenHelper(ctx, DATABASE_NAME, null, DATABASE_VERSION) {
 
-
     val TABLE_NAME = "Notes"
     val ID_COLUMN = "id"
     val TEXT_COLUMN = "text"
@@ -34,6 +33,17 @@ class DBHelper(ctx: Context): SQLiteOpenHelper(ctx, DATABASE_NAME, null, DATABAS
             cursor.getDouble(cursor.getColumnIndex(LAT_COLUMN)),
             cursor.getDouble(cursor.getColumnIndex(LNG_COLUMN))
         )
+    }
+
+    fun addNote(note: Note): Long {
+        val db = writableDatabase
+        return db.compileStatement(
+            "INSERT INTO $TABLE_NAME($TEXT_COLUMN, $LAT_COLUMN, $LNG_COLUMN) VALUES (?, ?, ?)")
+            .apply {
+                bindString(1, note.text)
+                bindDouble(2, note.lat)
+                bindDouble(3, note.lng)
+            }.executeInsert()
     }
 
     fun getNote(id: Int): Note? {
@@ -63,9 +73,9 @@ class DBHelper(ctx: Context): SQLiteOpenHelper(ctx, DATABASE_NAME, null, DATABAS
 
     fun deleteNote(id: Int?): Int {
         val db = writableDatabase
-        val stmt = db.compileStatement("DELETE FROM $TABLE_NAME WHERE $ID_COLUMN=?")
-        stmt.bindString (1, id?.toString())
-        return stmt.executeUpdateDelete()
+        return db.compileStatement("DELETE FROM $TABLE_NAME WHERE $ID_COLUMN=?").apply{
+            bindString (1, id?.toString())
+        }.executeUpdateDelete()
     }
 
     fun deleteNote(note: Note?): Int {

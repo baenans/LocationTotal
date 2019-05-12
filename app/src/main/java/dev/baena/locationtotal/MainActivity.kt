@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.Fragment
 import android.support.v4.content.ContextCompat
+import dev.baena.locationtotal.db.DBHelper
 import dev.baena.locationtotal.fragments.ActivitiesFragment
 import dev.baena.locationtotal.fragments.MapFragment
 import dev.baena.locationtotal.fragments.NotesFragment
@@ -23,13 +24,15 @@ class MainActivity : AppCompatActivity() {
     val PERMISSIONS_ACCESS_FINE_LOCATION = 3
 
     lateinit var mLocationServiceIntent: Intent
-
+    lateinit var mDatabase: DBHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(main_toolbar)
         checkPermissions()
+
+        mDatabase = DBHelper(this)
 
         main_navigation_view.setNavigationItemSelectedListener {
             val fragment =
@@ -76,6 +79,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        mDatabase.close()
         stopService(mLocationServiceIntent);
         super.onDestroy()
     }
