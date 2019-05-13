@@ -51,8 +51,7 @@ class GPXTrackWriter(context: Context) {
     fun addTrackPoint(lat: Double, lng: Double, ele: Double, date: Date): Boolean {
         if (mFileHasBeenClosed) return false
         appendToFile(
-            "      <trkpt lat=\"${String.format("%.5f", lat)}\"" +
-                    " lon=\"${String.format("%.5f", lng)}\">\n" +
+            "      <trkpt lat=\"${String.format("%.5f", lat)}\" lon=\"${String.format("%.5f", lng)}\">\n" +
                     "        <ele>${String.format("%.2f", ele)}</ele>\n" +
                     "        <time>${getDateString(date)}</time>\n" +
                     "      </trkpt>\n"
@@ -81,8 +80,7 @@ class GPXTrackWriter(context: Context) {
         // Run IO operation in corroutine
         GlobalScope.launch(Dispatchers.IO) {
             try{
-                val outputStream = OutputStreamWriter(
-                    FileOutputStream(mFile, true))
+                val outputStream = OutputStreamWriter(FileOutputStream(mFile, true))
                 outputStream.append(content)
                 outputStream.flush()
             } catch (e: Exception) {
@@ -92,8 +90,7 @@ class GPXTrackWriter(context: Context) {
     }
 
     private fun getDateString(date: Date): String =
-        SimpleDateFormat("" +
-                "'", Locale.UK).format(date)
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.UK).format(date)
 
     private fun getDateStringNow(): String = getDateString(Date())
 
