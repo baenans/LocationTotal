@@ -6,6 +6,7 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.io.File
 import java.io.FileReader
+import java.lang.Exception
 
 class GPXTrackParser {
     companion object {
@@ -16,32 +17,35 @@ class GPXTrackParser {
 
         fun parseFile(fileName: String): List<GeoPoint> {
             val geopoints = mutableListOf<GeoPoint>()
-            val file = File(fileName)
-            if (!file.exists()) return geopoints
+            try {
+                val file = File(fileName)
+                if (!file.exists()) return geopoints
 
-            val parser =
-                XmlPullParserFactory.newInstance().apply {
-                    isNamespaceAware = true
-                }.newPullParser()
+                val parser =
+                    XmlPullParserFactory.newInstance().apply {
+                        isNamespaceAware = true
+                    }.newPullParser()
 
-            parser.setInput(FileReader(file))
+                parser.setInput(FileReader(file))
 
-            var eventType = parser.eventType
-            while (eventType != XmlPullParser.END_DOCUMENT) {
-                if(eventType == XmlPullParser.START_TAG) {
-                    Log.v(TAG, "Start tag " + parser.name)
-                    if (parser.name == TRKPT_TAG) {
-                        geopoints.add(
-                            GeoPoint(
-                                parser.getAttributeValue(LAT_IDX).toDouble(),
-                                parser.getAttributeValue(LNG_IDX).toDouble()
+                var eventType = parser.eventType
+                while (eventType != XmlPullParser.END_DOCUMENT) {
+                    if (eventType == XmlPullParser.START_TAG) {
+                        if (parser.name == TRKPT_TAG) {
+                            geopoints.add(
+                                GeoPoint(
+                                    parser.getAttributeValue(LAT_IDX).toDouble(),
+                                    parser.getAttributeValue(LNG_IDX).toDouble()
+                                )
                             )
-                        )
+                        }
                     }
+                    eventType = parser.next()
                 }
-                eventType = parser.next()
+                return geopoints
+            } catch (e: Exception) {
+                return geopoints
             }
-            return geopoints
         }
     }
 }

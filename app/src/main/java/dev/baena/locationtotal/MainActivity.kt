@@ -8,23 +8,26 @@ import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.Fragment
 import android.support.v4.content.ContextCompat
+import android.util.SparseArray
 import dev.baena.locationtotal.db.DBHelper
 import dev.baena.locationtotal.fragments.ActivitiesFragment
 import dev.baena.locationtotal.fragments.MapFragment
 import dev.baena.locationtotal.fragments.NotesFragment
-import dev.baena.locationtotal.models.Note
 import dev.baena.locationtotal.services.LocationService
 import kotlinx.android.synthetic.main.activity_main.*
-import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
-    val PERMISSIONS_FOREGROUND_SERVICE = 1
-    val PERMISSIONS_WRITE_EXTERNAL_STORAGE = 2
-    val PERMISSIONS_ACCESS_FINE_LOCATION = 3
+    companion object {
+        const val NOTES_FRAGMENT = 101
+        const val ACTIVITIES_FRAGMENT = 202
+        const val MAP_FRAGMENT = 303
+    }
 
     lateinit var mLocationServiceIntent: Intent
     lateinit var mDatabase: DBHelper
+    private val mMapFragments = SparseArray<Fragment>()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,21 +39,35 @@ class MainActivity : AppCompatActivity() {
 
         main_navigation_view.setNavigationItemSelectedListener {
             val fragment =
-                if (it.itemId == R.id.nav_notes) NotesFragment.newInstance()
-                else if (it.itemId == R.id.nav_activities) ActivitiesFragment.newInstance()
-                else MapFragment.newInstance(MapFragment.FRAGMENT_ACTION_DEFAULT)
+                if (it.itemId == R.id.nav_notes) getFragment(NOTES_FRAGMENT)
+                else if (it.itemId == R.id.nav_activities) getFragment(ACTIVITIES_FRAGMENT)
+                else getFragment(MAP_FRAGMENT)
             drawerLayout.closeDrawers()
             replaceFragment(fragment)
         }
 
-        replaceFragment(MapFragment.newInstance())
+        replaceFragment(getFragment(MAP_FRAGMENT))
+
         mLocationServiceIntent = Intent(this, LocationService::class.java)
         startService(mLocationServiceIntent)
     }
 
-    private fun replaceFragment(fragment: Fragment): Boolean {
+    private fun getFragment(key: Int): Fragment {
+        var fragment = mMapFragments.get(key, null)
+        if (fragment != null) return fragment
+        when(key) {
+            NOTES_FRAGMENT -> {fragment = NotesFragment.newInstance()}
+            ACTIVITIES_FRAGMENT -> {fragment = ActivitiesFragment.newInstance()}
+            MAP_FRAGMENT -> {fragment = MapFragment.newInstance()}
+        }
+        mMapFragments.put(key, fragment)
+        return fragment
+    }
+
+    private fun replaceFragment(fragmentInstance: Fragment): Boolean {
         try {
-            supportFragmentManager.beginTransaction().replace(R.id.main_fragment_layout, fragment).commit()
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.main_fragment_layout, fragmentInstance).commit()
             return true
         } catch(e: Exception) {
             e.printStackTrace()
@@ -84,16 +101,16 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    fun displayTrack(fileName: String): Unit {
+    fun displayMapAndTrack(fileName: String): Unit {
         replaceFragment(MapFragment.newInstance(
             MapFragment.FRAGMENT_ACTION_DISPLAY_TRACK,
             fileName
         ))
     }
 
-    fun displayMarker(latLng: String): Unit {
+    fun displayMapCenteredInNote(latLng: String): Unit {
         replaceFragment(MapFragment.newInstance(
-            MapFragment.FRAGMENT_ACTION_DISPLAY_MARKER,
+            MapFragment.FRAGMENT_ACTION_FOCUS_NOTE,
             latLng
         ))
     }

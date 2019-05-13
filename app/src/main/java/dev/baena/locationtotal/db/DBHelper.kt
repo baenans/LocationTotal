@@ -9,13 +9,16 @@ import dev.baena.locationtotal.models.Note
 const val DATABASE_NAME = "locationtotal"
 const val DATABASE_VERSION = 1
 
-class DBHelper(ctx: Context): SQLiteOpenHelper(ctx, DATABASE_NAME, null, DATABASE_VERSION) {
+class DBHelper(ctx: Context):
+    SQLiteOpenHelper(ctx, DATABASE_NAME, null, DATABASE_VERSION) {
 
-    val TABLE_NAME = "Notes"
-    val ID_COLUMN = "id"
-    val TEXT_COLUMN = "text"
-    val LAT_COLUMN = "lat"
-    val LNG_COLUMN = "lng"
+    companion object {
+        const val TABLE_NAME = "Notes"
+        const val ID_COLUMN = "id"
+        const val TEXT_COLUMN = "text"
+        const val LAT_COLUMN = "lat"
+        const val LNG_COLUMN = "lng"
+    }
 
     override fun onCreate(db: SQLiteDatabase?) {
         db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_NAME ($ID_COLUMN INTEGER PRIMARY KEY, $TEXT_COLUMN VARCHAR(255), $LAT_COLUMN REAL, $LNG_COLUMN REAL)")
