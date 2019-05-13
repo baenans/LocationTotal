@@ -44,13 +44,12 @@ class ActivitiesFragment: Fragment(), TracksRecyclerAdapter.OnTrackClickListener
     }
 
     fun openTrack(fileName: String) {
-        val mainActivity: MainActivity = activity as MainActivity
-        mainActivity.displayTrack(fileName)
+        (activity as MainActivity).displayMapAndTrack(fileName)
     }
 
     fun getTracks(): List<Track> {
         var tracks = mutableListOf<Track>()
-        val folder = File(context?.filesDir, "/tracks/");
+        val folder = File(context?.filesDir, "/tracks/")
         if (!folder.exists()) return tracks
         val files = folder.listFiles()
         files.forEach {

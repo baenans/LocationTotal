@@ -2,7 +2,6 @@ package dev.baena.locationtotal.fragments
 
 import android.content.*
 import android.graphics.Color
-import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.app.AlertDialog
@@ -12,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.Toast
 import dev.baena.locationtotal.BuildConfig
 import dev.baena.locationtotal.MainActivity
 import dev.baena.locationtotal.R
@@ -20,7 +20,6 @@ import dev.baena.locationtotal.models.Note
 import dev.baena.locationtotal.services.LocationService
 import dev.baena.locationtotal.utils.GPXTrackParser
 import kotlinx.android.synthetic.main.fragment_map.*
-import org.jetbrains.anko.toast
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.util.GeoPoint
@@ -36,13 +35,14 @@ class MapFragment: Fragment() {
         val ARG_EXTRA = "$TAG.arg_extra"
         val FRAGMENT_ACTION_DEFAULT = "$TAG.default"
         val FRAGMENT_ACTION_DISPLAY_TRACK = "$TAG.display_track"
-        val FRAGMENT_ACTION_DISPLAY_MARKER = "$TAG.display_marker"
+        val FRAGMENT_ACTION_FOCUS_NOTE = "$TAG.focus_note"
         const val DEFAULT_MAP_LAT = 50.9087
         const val DEFAULT_MAP_LNG = -1.4096
-        fun newInstance(action: String = FRAGMENT_ACTION_DEFAULT, extra: String = "") = MapFragment().apply {
-            arguments = Bundle().apply {
-                putString(ARG_ACTION, action)
-                putString(ARG_EXTRA, extra)
+        fun newInstance(action: String = FRAGMENT_ACTION_DEFAULT, extra: String = "") =
+            MapFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_ACTION, action)
+                    putString(ARG_EXTRA, extra)
             }
         }
     }
@@ -63,18 +63,21 @@ class MapFragment: Fragment() {
         super.onCreate(savedInstanceState)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?  =
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
+                              savedInstanceState: Bundle?): View?  =
         inflater.inflate(R.layout.fragment_map, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
         mDatabase = (activity as MainActivity).mDatabase
+
 
         initializeMap(view)
         btn_toggle_tracking.setOnClickListener { toggleRouteTracking() }
+
         when(mAction) {
-            FRAGMENT_ACTION_DISPLAY_MARKER -> displayMarker()
+            FRAGMENT_ACTION_DEFAULT -> toast("Long press to create a note")
+            FRAGMENT_ACTION_FOCUS_NOTE -> focusMapMarker()
             FRAGMENT_ACTION_DISPLAY_TRACK -> displayTrack()
         }
         // Broadcast Receiver
@@ -82,18 +85,17 @@ class MapFragment: Fragment() {
             override fun onReceive(context: Context, intent: Intent?) {
                 when (intent?.action) {
                     LocationService.ACTION_LOCATION_CHANGED -> {
-                        Log.v(TAG, "location changed")
                         setMapCenter(
                             GeoPoint(
-                                intent?.getDoubleExtra(LocationService.ACTION_LOCATION_CHANGED_LAT, DEFAULT_MAP_LAT),
-                                intent?.getDoubleExtra(LocationService.ACTION_LOCATION_CHANGED_LNG, DEFAULT_MAP_LNG)
+                                intent.getDoubleExtra(LocationService.ACTION_LOCATION_CHANGED_LAT, DEFAULT_MAP_LAT),
+                                intent.getDoubleExtra(LocationService.ACTION_LOCATION_CHANGED_LNG, DEFAULT_MAP_LNG)
                             )
                         )
                     }
                     LocationService.ACTION_TRACKING_STATUS_CHANGED -> {
                         Log.v(TAG, "tracking status changed")
                         onTrackingStatusChange(
-                            intent?.getBooleanExtra(LocationService.ACTION_TRACKING_STATUS_CHANGED_STATUS, false)
+                            intent.getBooleanExtra(LocationService.ACTION_TRACKING_STATUS_CHANGED_STATUS, false)
                         )
                     }
                 }
@@ -101,7 +103,8 @@ class MapFragment: Fragment() {
         }
     }
 
-    fun initializeMap(view: View) {
+    private fun initializeMap(view: View) {
+        Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
         mMapView = view.findViewById(R.id.map_view)
         mMapView.controller.setZoom(16.0)
         mMapView.setMultiTouchControls(true)
@@ -109,20 +112,6 @@ class MapFragment: Fragment() {
             CustomZoomButtonsController.Visibility.SHOW_AND_FADEOUT
         )
         setMapCenter(GeoPoint(DEFAULT_MAP_LAT, DEFAULT_MAP_LNG))
-
-        // Markers Overlay
-        mMarkersOverlay = ItemizedIconOverlay<OverlayItem>(
-            view.context,
-            getMarkerOverlayItems(),
-            object : ItemizedIconOverlay.OnItemGestureListener<OverlayItem> {
-                override fun onItemLongPress(index: Int, item: OverlayItem?): Boolean = true  // unused
-                override fun onItemSingleTapUp(index: Int, item: OverlayItem?): Boolean {
-                    context?.toast(item?.title ?: "")
-                    return true
-                }
-            }
-        )
-        mMapView.overlays.add(mMarkersOverlay);
 
         // Events Overlay
         val mMapEventsReceiver = object : MapEventsReceiver {
@@ -134,6 +123,21 @@ class MapFragment: Fragment() {
         }
 
         mMapView.overlays.add(MapEventsOverlay(mMapEventsReceiver));
+
+        // Markers Overlay
+        mMarkersOverlay = ItemizedIconOverlay<OverlayItem>(
+            view.context,
+            getMarkerOverlayItems(),
+            object : ItemizedIconOverlay.OnItemGestureListener<OverlayItem> {
+                override fun onItemLongPress(index: Int, item: OverlayItem?): Boolean = true  // unused
+                override fun onItemSingleTapUp(index: Int, item: OverlayItem?): Boolean {
+                    Log.v(TAG, "item pressed? ${item.toString()}" )
+                    toast(item?.title ?: "")
+                    return true
+                }
+            }
+        )
+        mMapView.overlays.add(mMarkersOverlay);
     }
 
     override fun onResume() {
@@ -162,14 +166,6 @@ class MapFragment: Fragment() {
         mMapView?.controller.setCenter(center)
     }
 
-    private fun toggleRouteTracking() {
-        if (!mTrackingRoute) {
-            broadcastAction(LocationService.ACTION_START_TRACKING)
-        } else {
-            broadcastAction(LocationService.ACTION_STOP_TRACKING)
-        }
-    }
-
     private fun onTrackingStatusChange(trackingRoute: Boolean) {
         mTrackingRoute = trackingRoute
         btn_toggle_tracking.setImageResource(
@@ -179,6 +175,15 @@ class MapFragment: Fragment() {
                 R.drawable.ic_record
         )
     }
+
+    private fun toggleRouteTracking() {
+        if (!mTrackingRoute) {
+            broadcastAction(LocationService.ACTION_START_TRACKING)
+        } else {
+            broadcastAction(LocationService.ACTION_STOP_TRACKING)
+        }
+    }
+
 
     private fun getOverlayItemFor(note: Note) : OverlayItem {
         return OverlayItem(
@@ -200,7 +205,7 @@ class MapFragment: Fragment() {
                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS
             }
             AlertDialog.Builder(it)?.apply{
-                setTitle("Create a new note ")
+                setTitle("Add a note")
                 setView(input)
                 setPositiveButton("OK") { dialog, which -> saveNote(input.text.toString(), point) }
                 setNegativeButton("Cancel") { dialog, which -> dialog.cancel() }
@@ -221,7 +226,7 @@ class MapFragment: Fragment() {
         }
     }
 
-    private fun displayMarker() {
+    private fun focusMapMarker() {
         mExtra.split('&').let{
             setMapCenter(
                 GeoPoint(
@@ -235,15 +240,25 @@ class MapFragment: Fragment() {
     private fun displayTrack() {
         val geoPoints= GPXTrackParser.parseFile(mExtra)
         if (geoPoints.isEmpty()) {
+            toast("Could not load track: file may be corrupt")
             return
         }
         var line = Polyline().apply {
             width = 5f
             isGeodesic = true
             color = Color.BLUE
+            setPoints(geoPoints)
         }
-        line.setPoints(geoPoints)
         setMapCenter(geoPoints[0])
         mMapView.overlays.add(line)
+    }
+
+    private fun toast(message: String, length: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(activity?.applicationContext,
+            message,
+            length
+        ).apply {
+            show()
+        }
     }
 }

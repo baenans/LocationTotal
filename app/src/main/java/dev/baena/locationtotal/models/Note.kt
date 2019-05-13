@@ -6,3 +6,10 @@ data class Note (
     val lat: Double,
     val lng: Double
 )
+
+data class Track (
+    val name: String,
+    val path: String
+)
+
+

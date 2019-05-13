@@ -13,13 +13,17 @@ class NotesRecyclerAdapter(
         private val onNoteClickListener: OnNoteClickListener)
     : RecyclerView.Adapter<NotesRecyclerAdapter.NoteViewHolder>() {
 
-    inner class NoteViewHolder(inflater: LayoutInflater, parent: ViewGroup, val onNoteClickListener: OnNoteClickListener) :
-        RecyclerView.ViewHolder(inflater.inflate(R.layout.vh_note_item, parent, false)),
+    inner class NoteViewHolder(
+            inflater: LayoutInflater, parent: ViewGroup,
+            val onNoteClickListener: OnNoteClickListener
+        ):
+        RecyclerView.ViewHolder(
+            inflater.inflate(R.layout.vh_note_item, parent, false)
+        ),
         View.OnClickListener {
 
         private var mTextView: TextView? = null
         private var mGeopositionView: TextView? = null
-
 
         init {
             mTextView = itemView.findViewById(R.id.note_text)
@@ -29,7 +33,8 @@ class NotesRecyclerAdapter(
 
         fun bind(note: Note) {
             mTextView?.text = note.text
-            mGeopositionView?.text = "Lat: ${String.format("%.2f", note.lat)} Lng: ${String.format("%.2f", note.lng)}"
+            mGeopositionView?.text = "Lat: ${String.format("%.2f", note.lat)}" +
+                    " Lng: ${String.format("%.2f", note.lng)}"
         }
 
         override fun onClick(v: View?) {
@@ -37,13 +42,16 @@ class NotesRecyclerAdapter(
         }
 
     }
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NotesRecyclerAdapter.NoteViewHolder {
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int):
+            NotesRecyclerAdapter.NoteViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         val holder = NoteViewHolder(inflater, parent, onNoteClickListener)
         return holder
     }
 
-    override fun onBindViewHolder(holder: NotesRecyclerAdapter.NoteViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: NotesRecyclerAdapter.NoteViewHolder, position: Int) {
         val note: Note = list[position]
         holder.bind(note)
     }

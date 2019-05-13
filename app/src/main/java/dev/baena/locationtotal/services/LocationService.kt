@@ -53,25 +53,14 @@ class LocationService: Service(), LocationListener {
     override fun onBind(intent: Intent?): IBinder? = LocationServiceBinder()
 
     override fun onCreate() {
-        Log.v(TAG, "onCreate()")
         super.onCreate()
-
         // Implement BroadcastReceiver interface
         mBroadcastReceiver = object: BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent?) {
                 when (intent?.action) {
-                    ACTION_START_TRACKING -> {
-                        Log.v(TAG, "start tracking received")
-                        startTracking()
-                    }
-                    ACTION_STOP_TRACKING -> {
-                        Log.v(TAG, "stop tracking received")
-                        stopTracking()
-                    }
-                    ACTION_REQUEST_TRACKING_STATUS -> {
-                        Log.v(TAG, "tracking status request received")
-                        notifyTrackingStatus()
-                    }
+                    ACTION_START_TRACKING -> startTracking()
+                    ACTION_STOP_TRACKING -> stopTracking()
+                    ACTION_REQUEST_TRACKING_STATUS -> notifyTrackingStatus()
                 }
             }
         }
@@ -87,7 +76,6 @@ class LocationService: Service(), LocationListener {
         mLocationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED) return
-        // TODO: handle this
 
         mLocationManager.requestLocationUpdates(
             LocationManager.GPS_PROVIDER,
@@ -97,15 +85,9 @@ class LocationService: Service(), LocationListener {
         )
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.v(TAG, "onStartCommand()")
-        return super.onStartCommand(intent, flags, startId)
-    }
-
     override fun onDestroy() {
-        Log.v(TAG, "onDestroy()")
         unregisterReceiver(mBroadcastReceiver)  // stop receiver leak!
-        if (mTrackingLocation) return  // TODO: revisit this
+        if (mTrackingLocation) return
         mLocationManager?.removeUpdates(this)
         super.onDestroy()
     }
@@ -115,7 +97,6 @@ class LocationService: Service(), LocationListener {
      */
 
     override fun onLocationChanged(location: Location) {
-        Log.v(TAG, "Location changed: ${location.toString()}")
         sendBroadcast(Intent().apply{
             action = ACTION_LOCATION_CHANGED
             putExtra(ACTION_LOCATION_CHANGED_LAT, location?.latitude)
@@ -124,30 +105,24 @@ class LocationService: Service(), LocationListener {
         if (mTrackingLocation) persistLatestLocation(location)
     }
 
-    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-        Log.v(TAG, "Status changed")
-    }
+    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
 
-    override fun onProviderEnabled(provider: String?) {
-        Log.v(TAG, "onProviderEnabled")
-    }
+    override fun onProviderEnabled(provider: String?) {}
 
-    override fun onProviderDisabled(provider: String?) {
-        Log.v(TAG, "onProviderDisabled")
-    }
+    override fun onProviderDisabled(provider: String?) {}
 
     /**
      * Tracking route logic
      */
 
-    fun startTracking() {
+    private fun startTracking() {
         startForeground(NOTIFICATION_ID, getNotification())
         mTrackFile = GPXTrackWriter(this)
         mTrackingLocation = true
         notifyTrackingStatus()
     }
 
-    fun stopTracking() {
+    private fun stopTracking() {
         stopForeground(true)
         mTrackingLocation = false
         mTrackFile?.closeGPXFile()
@@ -155,7 +130,7 @@ class LocationService: Service(), LocationListener {
         notifyTrackingStatus()
     }
 
-    fun notifyTrackingStatus() {
+    private fun notifyTrackingStatus() {
         sendBroadcast(Intent().apply{
             action = ACTION_TRACKING_STATUS_CHANGED
             putExtra(ACTION_TRACKING_STATUS_CHANGED_STATUS, mTrackingLocation)
@@ -163,7 +138,6 @@ class LocationService: Service(), LocationListener {
     }
 
     private fun persistLatestLocation(location: Location) {
-        Log.v(TAG, "Persisting the latest location!: ${location.toString()}")
         mTrackFile?.addTrackPoint(
             location.latitude,
             location.longitude,
@@ -173,14 +147,14 @@ class LocationService: Service(), LocationListener {
     }
 
     /**
-     * Notification Logic /
-     * TODO: refactor, implement actions (stop from notification?)
+     * Notification Logic
+     * TODO: refactor + implement actions (stop from notification?)
      */
-    fun getNotification(): Notification {
+    private fun getNotification(): Notification {
         return getUnbuiltNotification().build()
     }
 
-    fun getUnbuiltNotification(): NotificationCompat.Builder {
+    private fun getUnbuiltNotification(): NotificationCompat.Builder {
         val action = PendingIntent.getActivity(
             applicationContext,
             0,

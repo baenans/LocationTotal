@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1371238558",
+    "firebase_url": "https://locationtotal.firebaseio.com",
+    "project_id": "locationtotal",
+    "storage_bucket": "locationtotal.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1371238558:android:09eb792f99ea8754",
+        "android_client_info": {
+          "package_name": "dev.baena.locationtotal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1371238558-6q0pde5cbd9197vt2cvhr9utotj4jhdl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dev.baena.locationtotal",
+            "certificate_hash": "82ddeddc753d875db584c3aeff28ee9e068496b5"
+          }
+        },
+        {
+          "client_id": "1371238558-skqcgn098bs5k72lrjsf7q7pk3taqnk3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxqGUAPyQDj0TixAnGbSuFo_qZZ_QgAOo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1371238558-skqcgn098bs5k72lrjsf7q7pk3taqnk3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

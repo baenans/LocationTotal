@@ -3,7 +3,6 @@ package dev.baena.locationtotal.fragments
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.widget.LinearLayoutManager
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,7 +12,7 @@ import dev.baena.locationtotal.adapters.NotesRecyclerAdapter
 import dev.baena.locationtotal.db.DBHelper
 import dev.baena.locationtotal.models.Note
 import kotlinx.android.synthetic.main.fragment_notes.*
-import org.osmdroid.util.GeoPoint
+
 
 class NotesFragment: Fragment(), NotesRecyclerAdapter.OnNoteClickListener {
 
@@ -32,6 +31,7 @@ class NotesFragment: Fragment(), NotesRecyclerAdapter.OnNoteClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         mDatabase = (activity as MainActivity).mDatabase
+
         mNotes = ArrayList(mDatabase.getNotes())
 
         notes_recycler_view.apply {
@@ -40,9 +40,10 @@ class NotesFragment: Fragment(), NotesRecyclerAdapter.OnNoteClickListener {
         }
     }
 
+
     fun openNote(pointInfo: String) {
         val mainActivity: MainActivity = activity as MainActivity
-        mainActivity.displayMarker(pointInfo)
+        mainActivity.displayMapCenteredInNote(pointInfo)
     }
 
     override fun onNoteClick(notePosition: Int) {
